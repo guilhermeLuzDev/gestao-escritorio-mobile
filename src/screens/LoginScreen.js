@@ -1,155 +1,332 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import api from '../services/api';
+import React, { useState, useRef } from 'react';
+import {
+  View, Text, TextInput, TouchableOpacity,
+  StyleSheet, ActivityIndicator, Animated,
+  KeyboardAvoidingView, Platform, ScrollView,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../context/AuthContext';
+import Toast from '../components/Toast';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [focado, setFocado] = useState({ email: false, senha: false });
+
+  const [toast, setToast] = useState({ visivel: false, tipo: 'info', mensagem: '' });
+  const mostrarToast = (mensagem, tipo = 'erro') => setToast({ visivel: true, tipo, mensagem });
+
+  // Animação de shake no botão quando falha
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const shake = () => {
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 8,  duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 6,  duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0,  duration: 60, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !senha) {
-      Alert.alert('Erro', 'Preencha todos os campos.');
+      mostrarToast('Preencha todos os campos.', 'aviso');
+      shake();
       return;
     }
 
     setLoading(true);
-    // INÍCIO DO MOCK
-    setTimeout(() => {
-      setLoading(false);
-
-      // Simulamos a regra de negócio do Spring Boot: verificar se a credencial bate
-      if (email === 'admin@email.com' && senha === '123') {
-        const fakeResponse = {
-          data: {
-            id: 1,
-            nome: 'Admin teste',
-            email: 'admin@email.com',
-            cpf: '12345678901',
-            tipo: 'ADM'
-          }
-        };
-
-        Alert.alert('Sucesso', `Login simulado com sucesso. Bem-vindo, ${fakeResponse.data.nome}!`);
-        // Redireciona para a lista de materiais
-        navigation.replace('Home'); 
-
-      } else {
-        // Simulamos a exceção do Spring Boot (Código 401/403)
-        Alert.alert('Falha no Login', 'E-mail ou senha inválidos no mock.');
-      }
-    }, 1500); 
-
-    // FIM DO MOCK
-    /* CÓDIGO REAL PARA CONEXÃO COM O BACKEND (DESCOMENTAR QUANDO O BACKEND ESTIVER PRONTO):
     try {
-      const response = await api.post('/usuario/login', { email, senha });
-      if (response.data) {
-        Alert.alert('Sucesso', `Bem-vindo, ${response.data.nome}!`);
-        navigation.replace('Home');
-      }
+      await login(email, senha);
     } catch (error) {
-      console.error(error);
       const mensagem = error.response?.data?.message || 'E-mail ou senha inválidos.';
-      Alert.alert('Falha no Login', mensagem);
+      mostrarToast(mensagem, 'erro');
+      shake();
     } finally {
       setLoading(false);
     }
-    */
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.titulo}>Sistema de Gestão</Text>
-        
-        <Text style={styles.label}>E-mail:</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          placeholder="Digite o e-mail (admin@email.com)"
-        />
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <Toast
+        visivel={toast.visivel}
+        tipo={toast.tipo}
+        mensagem={toast.mensagem}
+        onFechar={() => setToast(t => ({ ...t, visivel: false }))}
+      />
 
-        <Text style={styles.label}>Senha:</Text>
-        <TextInput
-          style={styles.input}
-          value={senha}
-          onChangeText={setSenha}
-          secureTextEntry
-          placeholder="Digite a senha (123)"
-        />
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Cabeçalho azul com ícone */}
+        <View style={styles.header}>
+          <View style={styles.iconCircle}>
+            <Ionicons name="cube-outline" size={38} color="#fff" />
+          </View>
+          <Text style={styles.appNome}>Gestão de Materiais</Text>
+          <Text style={styles.appSubtitulo}>Faça login para continuar</Text>
+        </View>
 
-        <TouchableOpacity 
-          style={styles.button} 
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFF" />
-          ) : (
-            <Text style={styles.buttonText}>ENTRAR</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </View>
+        {/* Card do formulário */}
+        <View style={styles.card}>
+
+          {/* Campo e-mail */}
+          <Text style={styles.label}>E-mail</Text>
+          <View style={[styles.inputWrapper, focado.email && styles.inputWrapperFocado]}>
+            <Ionicons
+              name="mail-outline"
+              size={18}
+              color={focado.email ? '#1a73e8' : '#9aa0a6'}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              onFocus={() => setFocado(f => ({ ...f, email: true }))}
+              onBlur={() => setFocado(f => ({ ...f, email: false }))}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              placeholder="exemplo@email.com"
+              placeholderTextColor="#9aa0a6"
+              returnKeyType="next"
+            />
+          </View>
+
+          {/* Campo senha */}
+          <Text style={styles.label}>Senha</Text>
+          <View style={[styles.inputWrapper, focado.senha && styles.inputWrapperFocado]}>
+            <Ionicons
+              name="lock-closed-outline"
+              size={18}
+              color={focado.senha ? '#1a73e8' : '#9aa0a6'}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.input}
+              value={senha}
+              onChangeText={setSenha}
+              onFocus={() => setFocado(f => ({ ...f, senha: true }))}
+              onBlur={() => setFocado(f => ({ ...f, senha: false }))}
+              secureTextEntry={!senhaVisivel}
+              placeholder="Digite a senha"
+              placeholderTextColor="#9aa0a6"
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
+            />
+            <TouchableOpacity
+              onPress={() => setSenhaVisivel(v => !v)}
+              style={styles.olhoBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name={senhaVisivel ? 'eye-outline' : 'eye-off-outline'}
+                size={20}
+                color="#9aa0a6"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Botão com shake */}
+          <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <View style={styles.buttonInner}>
+                  <Ionicons name="log-in-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+                  <Text style={styles.buttonText}>ENTRAR</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>ou</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Cadastro')}
+            style={styles.linkContainer}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.linkText}>Não tem conta? </Text>
+            <Text style={styles.linkDestaque}>Criar conta</Text>
+          </TouchableOpacity>
+
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa', 
+    flexGrow: 1,
+    backgroundColor: '#f0f4ff',
     justifyContent: 'center',
-    padding: 20,
   },
-  card: {
-    backgroundColor: '#ffffff', 
-    padding: 24,
-    borderRadius: 8, 
-    borderWidth: 1,
-    borderColor: '#dadce0', 
-    elevation: 2, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+
+  // Cabeçalho
+  header: {
+    backgroundColor: '#1a73e8',
+    alignItems: 'center',
+    paddingTop: 56,
+    paddingBottom: 48,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    marginBottom: -28,          // sobrepõe levemente o card
   },
-  titulo: {
-    fontSize: 24,
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  appNome: {
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#202124', 
-    textAlign: 'center',
-    marginBottom: 24,
+    color: '#fff',
+    letterSpacing: 0.3,
   },
+  appSubtitulo: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 4,
+  },
+
+  // Card
+  card: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 24,
+    elevation: 6,
+    shadowColor: '#1a73e8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 12,
+    zIndex: 1,
+    marginBottom: 32,
+  },
+
+  // Labels e inputs
   label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 8,
-    color: '#5f6368', 
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5f6368',
+    marginBottom: 6,
+    marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1.5,
+    borderColor: '#dadce0',
+    borderRadius: 10,
+    marginBottom: 16,
+    paddingHorizontal: 12,
+  },
+  inputWrapperFocado: {
+    borderColor: '#1a73e8',
+    backgroundColor: '#f0f6ff',
+  },
+  inputIcon: {
+    marginRight: 8,
   },
   input: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#dadce0',
-    borderRadius: 4,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
+    flex: 1,
+    paddingVertical: 13,
+    fontSize: 15,
     color: '#202124',
   },
+  olhoBtn: {
+    padding: 4,
+  },
+
+  // Botão
   button: {
-    backgroundColor: '#1a73e8', 
-    padding: 14,
-    borderRadius: 4,
+    backgroundColor: '#1a73e8',
+    padding: 15,
+    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 6,
+    elevation: 2,
+    shadowColor: '#1a73e8',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  buttonDisabled: {
+    backgroundColor: '#9aa0a6',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  buttonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   buttonText: {
-    color: '#ffffff',
+    color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
-  }
+    fontSize: 15,
+    letterSpacing: 1,
+  },
+
+  // Divisor
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#dadce0',
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    color: '#9aa0a6',
+    fontSize: 13,
+  },
+
+  // Link
+  linkContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  linkText: {
+    color: '#5f6368',
+    fontSize: 14,
+  },
+  linkDestaque: {
+    color: '#1a73e8',
+    fontWeight: '700',
+    fontSize: 14,
+  },
 });
