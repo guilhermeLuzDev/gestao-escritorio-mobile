@@ -39,7 +39,7 @@ export default function MovimentacaoFormScreen({ route, navigation }) {
     }
   };
 
-  const handleTransferir = async () => {
+  const handleSolicitar  = async () => {
     if (!localSelecionado) {
       mostrarToast('Selecione o local de destino.', 'aviso'); 
       return;
@@ -47,19 +47,17 @@ export default function MovimentacaoFormScreen({ route, navigation }) {
 
     setLoading(true);
     try {
-      await api.post('/movimentacao/transferir', {
+      await api.post('/solicitacao-movimentacao/solicitar', {
         materialId: material.id,
         localDestinoId: localSelecionado.id,
         observacao: observacao || null,
       });
 
-      // Sucesso — mostra toast e volta após 1.5s
-      mostrarToast(`${material.nome} transferido para ${localSelecionado.nome}!`, 'sucesso');
-      setTimeout(() => navigation.goBack(), 1500);
+      mostrarToast(`Solicitação de ${material.nome} enviada!`, 'sucesso');
 
     } catch (error) {
       const msg = error.response?.data?.message || 'Erro ao realizar transferência.';
-      mostrarToast(msg, 'erro'); // ← era Alert
+      mostrarToast(msg, 'erro'); 
     } finally {
       setLoading(false);
     }
@@ -126,7 +124,7 @@ export default function MovimentacaoFormScreen({ route, navigation }) {
         {/* Botão confirmar */}
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleTransferir}
+          onPress={handleSolicitar}
           disabled={loading}
         >
           {loading
@@ -134,7 +132,7 @@ export default function MovimentacaoFormScreen({ route, navigation }) {
             : (
               <View style={styles.buttonContent}>
                 <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
-                <Text style={styles.buttonText}>CONFIRMAR TRANSFERÊNCIA</Text>
+                <Text style={styles.buttonText}>SOLICITAR TRANSFERÊNCIA</Text>
               </View>
             )
           }

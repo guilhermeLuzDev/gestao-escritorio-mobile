@@ -15,6 +15,7 @@ import MovimentacaoFormScreen from './src/screens/MovimentacaoFormScreen';
 import MovimentacaoListScreen from './src/screens/MovimentacaoListScreen';
 import DetalhesMaterialScreen from './src/screens/DetalhesMaterialScreen';
 import CadastroMaterialScreen from './src/screens/CadastroMaterialScreen';
+import SolicitacoesPendentesScreen from './src/screens/SolicitacoesPendentesScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -26,10 +27,21 @@ const headerPadrao = {
   headerTitleStyle: { fontWeight: 'bold' },
 };
 
+function SolicitacoesStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="SolicitacoesPendentes"
+        component={SolicitacoesPendentesScreen}
+        options={{ ...headerPadrao, title: 'Solicitações Pendentes' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 function BotaoNovoMaterial({ navigation }) {
   const { usuario } = useAuth();
 
-  // ← aguarda o contexto carregar
   if (!usuario) return null;
   if (usuario.role !== 'ROLE_ADM') return null;
 
@@ -141,6 +153,7 @@ function AdminTabs() {
             Materiais: 'cube-outline',
             'Movimentações': 'swap-horizontal-outline',
             Perfil: 'person-outline',
+            'Solicitações': 'time-outline',
           };
           return <Ionicons name={icons[route.name]} size={size} color={color} />;
         },
@@ -148,6 +161,7 @@ function AdminTabs() {
     >
       <Tab.Screen name="Materiais" component={MateriaisStack} />
       <Tab.Screen name="Movimentações" component={MovimentacoesStack} />
+      <Tab.Screen name="Solicitações" component={SolicitacoesStack} />
       <Tab.Screen name="Perfil" component={PerfilStack} />
     </Tab.Navigator>
   );

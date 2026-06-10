@@ -102,25 +102,41 @@ export default function DetalhesMaterialScreen({ route, navigation }) {
           )}
         </View>
 
-        {usuario?.role === 'ROLE_ADM' && (
-          <View style={styles.acoesContainer}>
+        <View style={styles.acoesContainer}>
+
+          {/* Botão visível para o CLIENTE — solicitar */}
+          {usuario?.role !== 'ROLE_ADM' && (
             <TouchableOpacity
               style={styles.btnTransferir}
               onPress={() => navigation.navigate('Movimentacao', { material })}
             >
               <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
-              <Text style={styles.btnTransferirText}>Transferir Material</Text>
+              <Text style={styles.btnTransferirText}>Solicitar Transferência</Text>
             </TouchableOpacity>
+          )}
 
-            <TouchableOpacity
-              style={styles.btnEditar}
-              onPress={() => navigation.navigate('CadastroMaterial', { material })}
-            >
-              <Ionicons name="create-outline" size={18} color="#1a73e8" />
-              <Text style={styles.btnEditarText}>Editar Material</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          {/* Botões visíveis apenas para o ADM */}
+          {usuario?.role === 'ROLE_ADM' && (
+            <>
+              <TouchableOpacity
+                style={styles.btnTransferir}
+                onPress={() => navigation.navigate('Movimentacao', { material })}
+              >
+                <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
+                <Text style={styles.btnTransferirText}>Transferir Material</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.btnEditar}
+                onPress={() => navigation.navigate('CadastroMaterial', { material })}
+              >
+                <Ionicons name="create-outline" size={18} color="#1a73e8" />
+                <Text style={styles.btnEditarText}>Editar Material</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+        </View>
 
         <Text style={styles.secaoTitulo}>Histórico de Movimentações</Text>
 
