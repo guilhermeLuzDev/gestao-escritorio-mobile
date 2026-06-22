@@ -112,62 +112,70 @@ export default function HomeScreen({ navigation }) {
 
   const filtrosAtivos = categoriaSelecionada || localSelecionado;
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate('DetalhesMaterial', { material: item })}
-      activeOpacity={0.82}
-    >
-      {item.imagemUrl ? (
-        <Image source={{ uri: item.imagemUrl }} style={styles.imagem} resizeMode="cover" />
-      ) : (
-        <View style={styles.imagemPlaceholder}>
-          <Ionicons name="cube-outline" size={28} color="#c5c8cc" />
-        </View>
-      )}
+  const renderItem = ({ item }) => {
+    const BASE_URL = api.defaults.baseURL.replace('/api', '');
+    
+    const uriImagem = item.imagem 
+      ? (item.imagem.startsWith('http') ? item.imagem : `${BASE_URL}/imagens/${encodeURIComponent(item.imagem)}`)
+      : null;
 
-      <View style={styles.cardContent}>
-        <View style={styles.headerRow}>
-          <Text style={styles.nomeText} numberOfLines={1}>{item.nome}</Text>
-          {item.quantidade < 3 && (
-            <View style={styles.badgeDanger}>
-              <Text style={styles.badgeText}>CRÍTICO</Text>
-            </View>
-          )}
-        </View>
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('DetalhesMaterial', { material: item })}
+        activeOpacity={0.82}
+      >
+        {uriImagem ? (
+          <Image source={{ uri: uriImagem }} style={styles.imagem} resizeMode="cover" />
+        ) : (
+          <View style={styles.imagemPlaceholder}>
+            <Ionicons name="cube-outline" size={28} color="#c5c8cc" />
+          </View>
+        )}
 
-        <Text style={styles.categoriaText}>
-          {item.categoria?.nome || 'Sem categoria'}
-        </Text>
+        <View style={styles.cardContent}>
+          <View style={styles.headerRow}>
+            <Text style={styles.nomeText} numberOfLines={1}>{item.nome}</Text>
+            {item.quantidade < 3 && (
+              <View style={styles.badgeDanger}>
+                <Text style={styles.badgeText}>CRÍTICO</Text>
+              </View>
+            )}
+          </View>
 
-        <View style={styles.localRow}>
-          <Ionicons name="location-outline" size={13} color="#8a8f98" />
-          <Text style={styles.localText} numberOfLines={1}>
-            {item.local?.nome || 'Local não definido'}
+          <Text style={styles.categoriaText}>
+            {item.categoria?.nome || 'Sem categoria'}
           </Text>
-        </View>
 
-        <View style={styles.footerRow}>
-          <View style={styles.estoqueContainer}>
-            <Text style={styles.estoqueLabel}>ESTOQUE</Text>
-            <Text style={[styles.estoqueValor, item.quantidade < 3 && { color: '#d93025' }]}>
-              {item.quantidade} un.
+          <View style={styles.localRow}>
+            <Ionicons name="location-outline" size={13} color="#8a8f98" />
+            <Text style={styles.localText} numberOfLines={1}>
+              {item.local?.nome || 'Local não definido'}
             </Text>
           </View>
 
-          {usuario?.role === 'ROLE_ADM' && (
-            <TouchableOpacity
-              style={styles.btnTransferir}
-              onPress={() => navigation.navigate('Movimentacao', { material: item })}
-            >
-              <Ionicons name="swap-horizontal-outline" size={14} color="#1a73e8" />
-              <Text style={styles.btnTransferirText}>Transferir</Text>
-            </TouchableOpacity>
-          )}
+          <View style={styles.footerRow}>
+            <View style={styles.estoqueContainer}>
+              <Text style={styles.estoqueLabel}>ESTOQUE</Text>
+              <Text style={[styles.estoqueValor, item.quantidade < 3 && { color: '#d93025' }]}>
+                {item.quantidade} un.
+              </Text>
+            </View>
+
+            {usuario?.role === 'ROLE_ADM' && (
+              <TouchableOpacity
+                style={styles.btnTransferir}
+                onPress={() => navigation.navigate('Movimentacao', { material: item })}
+              >
+                <Ionicons name="swap-horizontal-outline" size={14} color="#1a73e8" />
+                <Text style={styles.btnTransferirText}>Transferir</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>

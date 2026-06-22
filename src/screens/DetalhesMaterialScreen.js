@@ -40,8 +40,17 @@ export default function DetalhesMaterialScreen({ route, navigation }) {
     });
   };
 
+  // Pega o IP dinamicamente e corrige caracteres especiais na URL
+  const BASE_URL = api.defaults.baseURL.replace('/api', '');
+  
+  const uriImagem = material.imagem
+    ? (material.imagem.startsWith('http') 
+        ? material.imagem 
+        : `${BASE_URL}/imagens/${encodeURIComponent(material.imagem)}`)
+    : null;
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
 
       <Toast
         visivel={toast.visivel}
@@ -50,10 +59,14 @@ export default function DetalhesMaterialScreen({ route, navigation }) {
         onFechar={() => setToast(t => ({ ...t, visivel: false }))}
       />
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
 
-        {material.imagemUrl ? (
-          <Image source={{ uri: material.imagemUrl }} style={styles.imagem} resizeMode="cover" />
+        {uriImagem ? (
+          <Image 
+            source={{ uri: uriImagem }} 
+            style={styles.imagem} 
+            resizeMode="cover" 
+          />
         ) : (
           <View style={styles.imagemPlaceholder}>
             <Ionicons name="cube-outline" size={48} color="#c5c8cc" />
@@ -90,21 +103,9 @@ export default function DetalhesMaterialScreen({ route, navigation }) {
               {material.quantidade} unidades
             </Text>
           </View>
-
-          {material.imagemUrl && (
-            <View style={styles.infoRow}>
-              <View style={styles.infoLabelRow}>
-                <Ionicons name="image-outline" size={14} color="#9aa0a6" />
-                <Text style={styles.infoLabel}>Imagem</Text>
-              </View>
-              <Text style={styles.infoValorSmall} numberOfLines={1}>{material.imagemUrl}</Text>
-            </View>
-          )}
         </View>
 
         <View style={styles.acoesContainer}>
-
-          {/* Botão visível para o CLIENTE — solicitar */}
           {usuario?.role !== 'ROLE_ADM' && (
             <TouchableOpacity
               style={styles.btnTransferir}
@@ -115,7 +116,6 @@ export default function DetalhesMaterialScreen({ route, navigation }) {
             </TouchableOpacity>
           )}
 
-          {/* Botões visíveis apenas para o ADM */}
           {usuario?.role === 'ROLE_ADM' && (
             <>
               <TouchableOpacity
@@ -135,7 +135,6 @@ export default function DetalhesMaterialScreen({ route, navigation }) {
               </TouchableOpacity>
             </>
           )}
-
         </View>
 
         <Text style={styles.secaoTitulo}>Histórico de Movimentações</Text>
@@ -162,10 +161,7 @@ export default function DetalhesMaterialScreen({ route, navigation }) {
                   <Text style={styles.localNome}>{item.localDestino?.nome || '—'}</Text>
                 </View>
               </View>
-              {item.observacao
-                ? <Text style={styles.observacao}>"{item.observacao}"</Text>
-                : null
-              }
+              {item.observacao ? <Text style={styles.observacao}>"{item.observacao}"</Text> : null}
               <Text style={styles.responsavel}>
                 Por: <Text style={styles.bold}>{item.usuario?.nome || '—'}</Text>
               </Text>
