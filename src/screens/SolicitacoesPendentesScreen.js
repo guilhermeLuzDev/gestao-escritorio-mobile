@@ -71,7 +71,10 @@ export default function SolicitacoesPendentesScreen() {
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <Text style={styles.cardMaterial}>{item.material?.nome}</Text>
+      <Text style={styles.cardMaterial}>
+        {item.patrimonio?.material?.nome || item.patrimonio?.nome || item.material?.nome || 'Sem nome'}
+        {item.patrimonio?.codigoPatrimonio ? ` (${item.patrimonio.codigoPatrimonio})` : ''}
+      </Text>
       <View style={styles.cardRow}>
         <Ionicons name="location-outline" size={13} color="#5f6368" />
         <Text style={styles.cardInfo}>
@@ -139,7 +142,8 @@ export default function SolicitacoesPendentesScreen() {
               {acao === 'aprovar' ? 'Aprovar solicitação' : 'Reprovar solicitação'}
             </Text>
             <Text style={styles.modalDesc}>
-              {solicitacaoSelecionada?.material?.nome}:{' '}
+              {solicitacaoSelecionada?.patrimonio?.material?.nome || solicitacaoSelecionada?.patrimonio?.nome || solicitacaoSelecionada?.material?.nome || 'Sem nome'}
+              {solicitacaoSelecionada?.patrimonio?.codigoPatrimonio ? ` (${solicitacaoSelecionada.patrimonio.codigoPatrimonio})` : ''}:{' '}
               {solicitacaoSelecionada?.localOrigem?.nome} →{' '}
               {solicitacaoSelecionada?.localDestino?.nome}
             </Text>

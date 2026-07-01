@@ -1,8 +1,21 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../services/api';
+import React, { createContext, useState, useEffect, useContext } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../services/api";
 
 const AuthContext = createContext({});
+
+function normalizarUsuario(dadosUsuario) {
+  if (!dadosUsuario) return null;
+
+  const id =
+    dadosUsuario.id ||
+    dadosUsuario.usuarioId ||
+    dadosUsuario.idUsuario ||
+    dadosUsuario.userId ||
+    null;
+
+  return { ...dadosUsuario, id };
+}
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
@@ -12,13 +25,13 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     async function carregarSessao() {
       try {
-        const tokenSalvo = await AsyncStorage.getItem('@token');
-        const usuarioSalvo = await AsyncStorage.getItem('@usuario');
+        const tokenSalvo = await AsyncStorage.getItem("@token");
+        const usuarioSalvo = await AsyncStorage.getItem("@usuario");
         if (tokenSalvo && usuarioSalvo) {
           setUsuario(JSON.parse(usuarioSalvo));
         }
       } catch (e) {
-        console.error('Erro ao carregar sessão:', e);
+        console.error("Erro ao carregar sessão:", e);
       } finally {
         setLoading(false);
       }
@@ -27,23 +40,36 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function login(email, senha) {
-    const response = await api.post('/auth/login', { email, senha });
+    const response = await api.post("/auth/login", { email, senha });
     const { token, ...dadosUsuario } = response.data;
+    const usuarioNormalizado = normalizarUsuario(dadosUsuario);
 
-    await AsyncStorage.setItem('@token', token);
-    await AsyncStorage.setItem('@usuario', JSON.stringify(dadosUsuario));
+    await AsyncStorage.setItem("@token", token);
+    await AsyncStorage.setItem("@usuario", JSON.stringify(usuarioNormalizado));
 
-    setUsuario(dadosUsuario);
-    return dadosUsuario; // retorna para o caller saber o tipo (ADM/CLIENTE)
+    setUsuario(usuarioNormalizado);
+    return usuarioNormalizado; // retorna para o caller saber o tipo (ADM/CLIENTE)
   }
 
   async function logout() {
-    await AsyncStorage.multiRemove(['@token', '@usuario']);
+    await AsyncStorage.multiRemove(["@token", "@usuario"]);
     setUsuario(null);
   }
 
+  async function updateUsuario(dadosAtualizados) {
+    const usuarioAtualizado = normalizarUsuario({
+      ...usuario,
+      ...dadosAtualizados,
+    });
+    await AsyncStorage.setItem("@usuario", JSON.stringify(usuarioAtualizado));
+    setUsuario(usuarioAtualizado);
+    return usuarioAtualizado;
+  }
+
   return (
-    <AuthContext.Provider value={{ usuario, loading, login, logout }}>
+    <AuthContext.Provider
+      value={{ usuario, loading, login, logout, updateUsuario }}
+    >
       {children}
     </AuthContext.Provider>
   );

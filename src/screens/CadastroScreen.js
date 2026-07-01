@@ -95,7 +95,7 @@ export default function CadastroScreen({ navigation }) {
         email,
         senha,
         telefone: telefone.replace(/\D/g, '') || null,
-        tipo: 'CLIENTE',
+        tipo: 'COLABORADOR',
       });
 
       mostrarToast('Conta criada com sucesso!', 'sucesso');

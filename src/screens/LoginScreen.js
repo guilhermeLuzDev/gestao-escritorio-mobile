@@ -43,7 +43,16 @@ export default function LoginScreen({ navigation }) {
     try {
       await login(email, senha);
     } catch (error) {
-      const mensagem = error.response?.data?.message || 'E-mail ou senha inválidos.';
+      let mensagem = "E-mail ou senha inválidos.";
+      
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        mensagem = "E-mail ou senha incorretos. Tente novamente.";
+      } else if (error.response?.data?.message) {
+        mensagem = error.response.data.message;
+      } else if (error.message && error.message.includes("Network Error")) {
+        mensagem = "Erro de conexão. Verifique se o servidor está rodando.";
+      }
+
       mostrarToast(mensagem, 'erro');
       shake();
     } finally {
